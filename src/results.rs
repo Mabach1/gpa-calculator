@@ -1,5 +1,8 @@
 use anyhow::Error;
-use std::fs;
+use std::{
+    fs::{self, File},
+    io::Write,
+};
 use thiserror::Error;
 
 use crate::subject_result::SubjectResult;
@@ -24,6 +27,12 @@ pub enum ResultsError {
 
     #[error("Cannot remove result, index {idx} is out of bounds")]
     OutOfBounds { idx: usize },
+
+    #[error("Failed to create file: {filename}")]
+    FailedToCreateFile { filename: String },
+
+    #[error("Failed to write into file: {filename}")]
+    FailedToWriteToFile { filename: String },
 }
 
 impl Results {
@@ -128,6 +137,28 @@ impl Results {
         if self.total_credits > 0 {
             self.gpa /= self.total_credits as f32;
         }
+    }
+
+    pub fn save_to_file(&self, filename: &str) -> Result<(), ResultsError> {
+        let mut f = File::create(filename).map_err(|_| ResultsError::FailedToCreateFile {
+            filename: filename.to_string(),
+        })?;
+
+        for s in &self.subject_results {
+            f.write(format!("{}\n", s.to_string()).as_bytes())
+                .map_err(|_| ResultsError::FailedToWriteToFile {
+                    filename: filename.to_string(),
+                })?;
+        }
+
+        Ok(())
+    }
+
+    pub fn expect_points(&self, target_gpa: f32, credit: u32) -> Option<u32> {
+        let curr_total = self.gpa * self.total_credits as f32;
+        let required = target_gpa * (self.total_credits + credit) as f32;
+        let points_needed = ((required - curr_total) / credit as f32).ceil() as u32;
+        Some(points_needed)
     }
 
     pub fn remove_result(&mut self, index: usize) -> Result<(), ResultsError> {

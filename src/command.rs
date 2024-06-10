@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub enum Command {
     Add(CommandAdd),
     Show(CommandShow),
@@ -8,6 +8,8 @@ pub enum Command {
     Import(CommandImport),
     Gpa(CommandGpa),
     Drop(CommandDrop),
+    Save(CommandSave),
+    Expect(CommandExpect),
     Quit,
     History,
     Illegal,
@@ -37,11 +39,11 @@ impl Command {
         };
         let arguments = Vec::from(&data[1..]);
 
-        if command == &":q" || command == &":quit" {
+        if command == &"q" || command == &"quit" {
             return Ok(Command::Quit);
         }
 
-        if command == &":h" || command == &":history" {
+        if command == &"h" || command == &"history" {
             return Ok(Command::History);
         }
 
@@ -52,6 +54,8 @@ impl Command {
             &"import" => Ok(Command::Import(CommandImport::new(arguments)?)),
             &"gpa" => Ok(Command::Gpa(CommandGpa::new(arguments)?)),
             &"drop" => Ok(Command::Drop(CommandDrop::new(arguments)?)),
+            &"save" => Ok(Command::Save(CommandSave::new(arguments)?)),
+            &"expect" => Ok(Command::Expect(CommandExpect::new(arguments)?)),
             _ => Err(CommandError::UnknownCommand {
                 value: command_lit.to_string(),
             }),
@@ -76,7 +80,16 @@ fn parse_int(str: &str) -> Result<u32, CommandError> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+fn parse_float(str: &str) -> Result<f32, CommandError> {
+    let str = str.to_string();
+
+    match str.to_string().parse() {
+        Ok(value) => Ok(value),
+        _ => Err(CommandError::ParseError { value: str }),
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct CommandAdd {
     pub points: u32,
     pub credit: u32,
@@ -93,7 +106,7 @@ impl CommandAdd {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub struct CommandShow {}
 
 impl CommandShow {
@@ -103,7 +116,7 @@ impl CommandShow {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub struct CommandRemove {
     pub index: usize,
 }
@@ -117,7 +130,7 @@ impl CommandRemove {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub struct CommandImport {
     pub filename: String,
 }
@@ -131,7 +144,7 @@ impl CommandImport {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub struct CommandGpa {}
 
 impl CommandGpa {
@@ -141,12 +154,42 @@ impl CommandGpa {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub struct CommandDrop {}
 
 impl CommandDrop {
     fn new(literals: Vec<&str>) -> Result<Self, CommandError> {
         check_num_args(0, literals.len())?;
         Ok(Self {})
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct CommandSave {
+    pub filename: String,
+}
+
+impl CommandSave {
+    fn new(literals: Vec<&str>) -> Result<Self, CommandError> {
+        check_num_args(1, literals.len())?;
+        Ok(Self {
+            filename: literals.get(0).unwrap().to_string(),
+        })
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct CommandExpect {
+    pub expected_gpa: f32,
+    pub credit: u32,
+}
+
+impl CommandExpect {
+    fn new(literals: Vec<&str>) -> Result<Self, CommandError> {
+        check_num_args(2, literals.len())?;
+        Ok(Self {
+            expected_gpa: parse_float(literals.get(0).unwrap())?,
+            credit: parse_int(literals.get(1).unwrap())?,
+        })
     }
 }

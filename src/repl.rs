@@ -36,7 +36,17 @@ impl Repl {
                     println!("{}", el);
                 }
             }
-            _ => (),
+            Command::Save(c) => {
+                self.results.save_to_file(&c.filename)?;
+            }
+            Command::Expect(c) => match self.results.expect_points(c.expected_gpa, c.credit) {
+                Some(value) => {
+                    println!("{}", value);
+                }
+                _ => println!("Cannot achive this gpa: {}", c.expected_gpa),
+            },
+            Command::Quit => (),
+            Command::Illegal => (),
         }
 
         Ok(())
