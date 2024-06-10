@@ -11,10 +11,13 @@ works as a repl with error handeling and other sweet stuff.
 - `import <filename>` loads records from the given file, records in the file have to be in this format `<points> <index>`, one record for one line
 - `save <filename>` saves all the records into given file
 - `drop` delets all the records
-</br>
 - `quit` or `q` will exit the app
 - `history` or `h` will show all previous commands
 
+## Usage example
 ![expample](./images/example.png)
 
+## TODOs
+- better error messages
+- better logs
 
