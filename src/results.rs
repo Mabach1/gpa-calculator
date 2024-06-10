@@ -6,9 +6,9 @@ use crate::subject_result::SubjectResult;
 
 #[derive(Debug)]
 pub struct Results {
-    gpa: f32,
-    total_credits: u32,
-    subject_results: Vec<SubjectResult>,
+    pub gpa: f32,
+    pub total_credits: u32,
+    pub subject_results: Vec<SubjectResult>,
 }
 
 #[derive(Debug, Error)]
@@ -86,7 +86,7 @@ impl Results {
             total_credits += result.credit;
             gpa += result.credit as f32 * result.points as f32;
 
-            results.push(SubjectResult::from_string(line)?);
+            results.push(result);
         }
 
         if total_credits > 0 {
@@ -116,12 +116,27 @@ impl Results {
         }
     }
 
+    fn recalculate_gpa(&mut self) {
+        self.total_credits = 0;
+        self.gpa = 0.0;
+
+        for s in &self.subject_results {
+            self.total_credits += s.credit;
+            self.gpa += (s.credit * s.points) as f32;
+        }
+
+        if self.total_credits > 0 {
+            self.gpa /= self.total_credits as f32;
+        }
+    }
+
     pub fn remove_result(&mut self, index: usize) -> Result<(), ResultsError> {
         if self.subject_results.len() <= index {
             return Err(ResultsError::OutOfBounds { idx: index });
         }
 
         self.subject_results.remove(index);
+        self.recalculate_gpa();
 
         Ok(())
     }

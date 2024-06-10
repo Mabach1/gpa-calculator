@@ -13,11 +13,18 @@ pub enum SubjectResultError {
 
     #[error("Could not parse {value} to u32")]
     CouldNotParse { value: String },
+
+    #[error("Argument too large: {arg} > 100")]
+    ArgumentTooLarge { arg: u32 },
 }
 
 impl SubjectResult {
-    pub fn new(points: u32, credit: u32) -> Self {
-        Self { points, credit }
+    pub fn new(points: u32, credit: u32) -> Result<Self, SubjectResultError> {
+        if points > 100 {
+            return Err(SubjectResultError::ArgumentTooLarge { arg: points });
+        }
+
+        Ok(Self { points, credit })
     }
 
     fn from_str_to_int(str: &str) -> Result<u32, SubjectResultError> {
@@ -42,7 +49,7 @@ impl SubjectResult {
         let points = SubjectResult::from_str_to_int(data.get(0).unwrap())?;
         let credit = SubjectResult::from_str_to_int(data.get(1).unwrap())?;
 
-        Ok(Self { points, credit })
+        SubjectResult::new(points, credit)
     }
 
     pub fn to_string(&self) -> String {
